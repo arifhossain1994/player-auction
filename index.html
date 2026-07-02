@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="logo.png" type="image/x-icon">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>📱 BIDDER INTERFACE 📱</title>
+    <style>
+        :root {
+            --bg-dark: #090b11;
+            --panel-bg: #131a26;
+            --panel-border: #222e45;
+            --accent-cyan: #00f5ff;
+            --neon-green: #39ff14;
+            --neon-pink: #ff007f;
+            --text-main: #ffffff;
+            --text-muted: #7f91b3;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            margin: 0;
+            padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom) 16px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: stretch;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .app-wrapper {
+            width: 100%;
+            max-width: 480px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 16px 0;
+        }
+
+        /* CARD PANELS Base Layout */
+        .card-panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            box-sizing: border-box;
+        }
+
+        h2 {
+            margin: 0 0 16px 0;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        /* CUSTOM FIELD INPUTS */
+        .select-wrapper {
+            position: relative;
+            width: 100%;
+        }
+
+        select {
+            width: 100%;
+            background: #0b0e15;
+            border: 1px solid var(--panel-border);
+            color: white;
+            padding: 14px 16px;
+            border-radius: 10px;
+            font-size: 1rem;
+            outline: none;
+            appearance: none;
+            -webkit-appearance: none;
+            transition: border-color 0.2s;
+        }
+
+        select:focus {
+            border-color: var(--accent-cyan);
+        }
+
+        .select-wrapper::after {
+            content: '▼';
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+        }
+
+        /* WALLET COMPONENT FRAME */
+        .wallet-display {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #0b0e15;
+            padding: 14px 18px;
+            border-radius: 10px;
+            margin-top: 14px;
+            border-left: 4px solid var(--neon-green);
+        }
+
+        .wallet-lbl {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .wallet-val {
+            font-family: 'Impact', Arial Black, sans-serif;
+            font-size: 1.8rem;
+            color: var(--neon-green);
+            letter-spacing: 0.5px;
+        }
+
+        /* THE LIVE BROADCAST MAIN DOCK */
+        .live-stage {
+            text-align: center;
+            background: radial-gradient(circle at top, #192438, var(--panel-bg));
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 30px 20px;
+        }
+
+        .player-name {
+            font-size: 2.2rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            margin-bottom: 4px;
+            line-height: 1.2;
+        }
+
+        .bid-price {
+            font-family: 'Impact', Arial Black, sans-serif;
+            font-size: 4.8rem;
+            color: var(--accent-cyan);
+            margin: 10px 0;
+            line-height: 1;
+            text-shadow: 0 0 20px rgba(0, 245, 255, 0.2);
+        }
+
+        .bidder-holder {
+            font-size: 1.1rem;
+            color: var(--neon-pink);
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* MOBILE BOTTOM BUTTON COCKPIT */
+        .action-dock {
+            margin-top: auto;
+        }
+
+        .bid-button {
+            width: 100%;
+            background: linear-gradient(135deg, #00f5ff, #00bfff);
+            color: #05070a;
+            border: none;
+            padding: 20px;
+            font-family: 'Impact', Arial Black, sans-serif;
+            font-size: 2.2rem;
+            letter-spacing: 1px;
+            border-radius: 16px;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(0, 245, 255, 0.25);
+            transition: transform 0.05s ease-in-out, box-shadow 0.05s ease-in-out;
+            text-transform: uppercase;
+        }
+
+        .bid-button:active {
+            transform: scale(0.96);
+            box-shadow: 0 2px 8px rgba(0, 245, 255, 0.1);
+        }
+
+        .bid-button:disabled {
+            background: #1f2736;
+            color: #4e5f7a;
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status-sold-pill {
+            background: rgba(255, 0, 127, 0.15);
+            color: var(--neon-pink);
+            border: 2px solid var(--neon-pink);
+            text-align: center;
+            font-family: 'Impact', sans-serif;
+            font-size: 1.8rem;
+            letter-spacing: 2px;
+            padding: 10px;
+            border-radius: 10px;
+            margin-top: 15px;
+            text-transform: uppercase;
+            animation: pulse 1.5s infinite;
+        }
+
+        .mode-toggle {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-top: 14px;
+        }
+
+        .mode-toggle-btn {
+            flex: 1;
+            border: 1px solid var(--panel-border);
+            background: #0b0e15;
+            color: var(--text-muted);
+            border-radius: 999px;
+            padding: 8px 10px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .mode-toggle-btn.active {
+            background: rgba(0, 245, 255, 0.16);
+            color: var(--accent-cyan);
+            border-color: var(--accent-cyan);
+        }
+
+        .manual-bid-controls {
+            display: none;
+            margin-top: 12px;
+        }
+
+        .manual-bid-label {
+            display: block;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .manual-bid-input {
+            width: 100%;
+            box-sizing: border-box;
+            background: #0b0e15;
+            border: 1px solid var(--panel-border);
+            color: white;
+            border-radius: 10px;
+            padding: 12px 14px;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        .manual-bid-input:focus {
+            border-color: var(--accent-cyan);
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 0.7;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0.7;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="app-wrapper">
+
+        <div class="card-panel">
+            <h2>Roster Workspace</h2>
+
+            <div id="authSection" class="pin-wrapper" style="margin-top: 15px; display: block;">
+                <input type="password" id="teamPinInput" placeholder="Enter 4-6 Digit Team PIN" maxlength="6"
+                    style="padding: 10px; font-size: 16px; text-align: center; border-radius: 4px; border: 1px solid #ccc;">
+                <button onclick="loginWithPin()"
+                    style="padding: 10px 15px; font-size: 16px; cursor: pointer; font-weight: bold;">Access
+                    Board</button>
+                <div id="pinError"
+                    style="color: #ff4d4d; font-size: 13px; margin-top: 8px; display: none; font-weight: bold;">Invalid
+                    PIN. Team not found.</div>
+            </div>
+
+            <div id="activeTeamDisplay"
+                style="display: none; justify-content: space-between; align-items: center; margin-top: 10px;">
+                <div>
+                    <span style="font-size: 12px; text-transform: uppercase; color: #888; display: block;">Logged in
+                        as</span>
+                    <strong id="displayTeamName" style="font-size: 18px; color: #fff;">--</strong>
+                </div>
+                <button onclick="logoutTeam()"
+                    style="padding: 5px 10px; font-size: 12px; background: #444; color: #fff; border: none; cursor: pointer; border-radius: 3px;">Forget
+                    PIN</button>
+            </div>
+
+            <div id="walletDisplay" class="wallet-display" style="display: none; margin-top: 15px;">
+                <span class="wallet-lbl">Remaining Budget</span>
+                <span id="myBudgetVal" class="wallet-val">$0</span>
+            </div>
+        </div>
+
+        <div class="card-panel live-stage">
+            <h2>Current Live Stage Floor</h2>
+            <div id="floorPlayerName" class="player-name">Connecting...</div>
+            <div id="floorBidAmount" class="bid-price">$0</div>
+
+            <div id="floorBidderName" class="bidder-holder"
+                style="font-size: 24px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #fff; text-shadow: 0 0 10px rgba(0,255,204,0.5); padding: 10px; border-radius: 6px; display: inline-block; animation: pulseGlow 2s infinite ease-in-out;">
+                Floor Closed
+            </div>
+
+            <div id="soldBanner" class="status-sold-pill" style="display: none;">SOLD</div>
+
+            <div id="maxBidDisplay"
+                style="font-size: 18px; margin-top: 25px; border-top: 1px dashed #444; padding-top: 15px; color: #eee; font-weight: bold; text-align: center; display: none;">
+                Max bid you can use for this player: <span id="myMaxBidVal"
+                    style="color: #00ffcc; font-size: 20px;">$0</span>
+
+                <div id="bidModeToggle" class="mode-toggle" role="tablist" aria-label="Bid mode selector">
+                    <button type="button" id="autoModeBtn" class="mode-toggle-btn active"
+                        onclick="setBidMode('auto')">Auto</button>
+                    <button type="button" id="manualModeBtn" class="mode-toggle-btn"
+                        onclick="setBidMode('manual')">Manual</button>
+                </div>
+
+                <div id="manualBidControls" class="manual-bid-controls">
+                    <label for="manualBidInput" class="manual-bid-label">Enter custom bid</label>
+                    <input type="number" id="manualBidInput" class="manual-bid-input" min="0" step="250"
+                        inputmode="numeric" placeholder="Enter amount">
+                </div>
+            </div>
+        </div>
+
+        <div class="action-dock">
+            <button id="mainBidBtn" class="bid-button" disabled onclick="submitLiveFloorBid()">TAP TO BID</button>
+        </div>
+
+    </div>
+
+    <style>
+        @keyframes pulseGlow {
+            0% {
+                transform: scale(1);
+                opacity: 0.9;
+                text-shadow: 0 0 8px rgba(0, 255, 204, 0.4);
+            }
+
+            50% {
+                transform: scale(1.04);
+                opacity: 1;
+                text-shadow: 0 0 20px rgba(0, 255, 204, 0.9), 0 0 30px rgba(0, 255, 204, 0.4);
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 0.9;
+                text-shadow: 0 0 8px rgba(0, 255, 204, 0.4);
+            }
+        }
+    </style>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+        const SUPABASE_URL = "https://xudbfkvfuqaqzkqpgtsn.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1ZGJma3ZmdXFhcXprcXBndHNuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNTM3NjksImV4cCI6MjA5NzgyOTc2OX0.k_C3s_jdWStqd6BXSJEIv0uYzA04nk000v-7ChldGz0";
+        const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let myTeamName = "";
+        let isVerified = false;
+        let myCurrentBudget = 0;
+        let activeFloorRecord = {};
+        let myRosterArray = [];
+        let bidMode = 'auto';
+
+        const elements = {
+            authSection: document.getElementById('authSection'),
+            activeTeamDisplay: document.getElementById('activeTeamDisplay'),
+            walletDisplay: document.getElementById('walletDisplay'),
+            teamPinInput: document.getElementById('teamPinInput'),
+            pinError: document.getElementById('pinError'),
+            displayTeamName: document.getElementById('displayTeamName'),
+            myBudgetVal: document.getElementById('myBudgetVal'),
+            myMaxBidVal: document.getElementById('myMaxBidVal'),
+            maxBidDisplay: document.getElementById('maxBidDisplay'),
+            floorPlayerName: document.getElementById('floorPlayerName'),
+            floorBidAmount: document.getElementById('floorBidAmount'),
+            floorBidderName: document.getElementById('floorBidderName'),
+            soldBanner: document.getElementById('soldBanner'),
+            mainBidBtn: document.getElementById('mainBidBtn'),
+            autoModeBtn: document.getElementById('autoModeBtn'),
+            manualModeBtn: document.getElementById('manualModeBtn'),
+            manualBidControls: document.getElementById('manualBidControls'),
+            manualBidInput: document.getElementById('manualBidInput')
+        };
+
+        elements.manualBidInput?.addEventListener('input', evaluateButtonState);
+        elements.manualBidInput?.addEventListener('change', evaluateButtonState);
+
+        function setText(element, value) {
+            if (element) element.textContent = value;
+        }
+
+        function setDisplay(element, value) {
+            if (element) element.style.display = value;
+        }
+
+        function getNextBidRequired() {
+            return activeFloorRecord.bidder === "Base Price"
+                ? activeFloorRecord.base_price
+                : (activeFloorRecord.amount || 0) + 250;
+        }
+
+        function calculateMaxAllowedBid() {
+            if (!activeFloorRecord || !activeFloorRecord.player) return 0;
+
+            // Change these numbers if the player roster size or minimum price changes in the future
+            const TOTAL_ROSTER_TARGET = 6;
+            const MIN_PLAYER_PRICE = 5000;
+
+            const currentOwnedCount = myRosterArray.length;
+            const slotsRemainingToBuy = Math.max(0, TOTAL_ROSTER_TARGET - currentOwnedCount);
+
+            if (slotsRemainingToBuy <= 1) {
+                return myCurrentBudget;
+            }
+
+            const standardReservation = (slotsRemainingToBuy - 1) * MIN_PLAYER_PRICE;
+            return Math.max(0, myCurrentBudget - standardReservation);
+        }
+
+        function getManualBidInputValue() {
+            const rawValue = elements.manualBidInput?.value;
+            if (rawValue === undefined || rawValue === null || rawValue === '') return null;
+
+            const parsedValue = parseInt(rawValue, 10);
+            return Number.isFinite(parsedValue) ? parsedValue : null;
+        }
+
+        function updateBidModeUI() {
+            const isManualMode = bidMode === 'manual';
+            elements.autoModeBtn?.classList.toggle('active', !isManualMode);
+            elements.manualModeBtn?.classList.toggle('active', isManualMode);
+            setDisplay(elements.manualBidControls, isManualMode ? 'block' : 'none');
+
+            if (!isManualMode) return;
+
+            const manualValue = getManualBidInputValue();
+            if (manualValue === null || manualValue <= 0) {
+                const nextBidRequired = getNextBidRequired();
+                const suggestedValue = Number.isFinite(nextBidRequired) && nextBidRequired > 0 ? nextBidRequired : 250;
+                const maxAllowedBid = calculateMaxAllowedBid();
+                const fallbackValue = maxAllowedBid > 0 ? Math.min(suggestedValue, maxAllowedBid) : suggestedValue;
+                if (elements.manualBidInput) elements.manualBidInput.value = fallbackValue;
+            }
+        }
+
+        window.setBidMode = function (mode) {
+            bidMode = mode === 'manual' ? 'manual' : 'auto';
+            updateBidModeUI();
+            evaluateButtonState();
+        };
+
+        async function initBidderApp() {
+            const { data: initialFloor } = await supabase.from('current_auction').select('*').eq('id', 1).single();
+            if (initialFloor) renderBidderView(initialFloor);
+
+            supabase
+                .channel('bidder-floor-channel')
+                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'current_auction', filter: 'id=eq.1' }, payload => {
+                    renderBidderView(payload.new);
+                })
+                .subscribe();
+
+            supabase
+                .channel('bidder-budget-channel')
+                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'bidders' }, () => {
+                    if (myTeamName && isVerified) refreshMyBudgetAndRoster();
+                })
+                .subscribe();
+
+            const cachedPin = localStorage.getItem('bidder_team_pin');
+            setBidMode('auto');
+
+            if (cachedPin) {
+                elements.teamPinInput.value = cachedPin;
+                await loginWithPin();
+            } else {
+                evaluateButtonState();
+            }
+        }
+
+        window.loginWithPin = async function () {
+            const pinInput = elements.teamPinInput.value.trim();
+            if (!pinInput) return;
+
+            const formattedPin = /^\d+$/.test(pinInput) ? parseInt(pinInput, 10) : pinInput;
+
+            const { data, error } = await supabase
+                .from('bidders')
+                .select('*')
+                .eq('pin', formattedPin)
+                .maybeSingle();
+
+            if (error) {
+                console.error("Supabase Login Error:", error.message);
+                return;
+            }
+
+            if (data) {
+                myTeamName = data.name;
+                myCurrentBudget = data.budget;
+                myRosterArray = Array.isArray(data.team) ? data.team : (typeof data.team === 'string' ? JSON.parse(data.team) : []);
+                isVerified = true;
+
+                localStorage.setItem('bidder_team_pin', pinInput);
+
+                setDisplay(elements.pinError, 'none');
+                setDisplay(elements.authSection, 'none');
+                setDisplay(elements.activeTeamDisplay, 'flex');
+                setDisplay(elements.walletDisplay, 'flex');
+                setText(elements.displayTeamName, myTeamName);
+                setText(elements.myBudgetVal, `$${myCurrentBudget}`);
+                setBidMode('auto');
+            } else {
+                isVerified = false;
+                myTeamName = '';
+                localStorage.removeItem('bidder_team_pin');
+                setDisplay(elements.pinError, 'block');
+                setDisplay(elements.authSection, 'block');
+                setDisplay(elements.activeTeamDisplay, 'none');
+                setDisplay(elements.walletDisplay, 'none');
+            }
+            evaluateButtonState();
+        };
+
+        window.logoutTeam = function () {
+            localStorage.removeItem('bidder_team_pin');
+            myTeamName = '';
+            isVerified = false;
+            myCurrentBudget = 0;
+            myRosterArray = [];
+
+            elements.teamPinInput.value = '';
+            setDisplay(elements.authSection, 'block');
+            setDisplay(elements.activeTeamDisplay, 'none');
+            setDisplay(elements.walletDisplay, 'none');
+            setBidMode('auto');
+
+            evaluateButtonState();
+        };
+
+        async function refreshMyBudgetAndRoster() {
+            if (!isVerified) return;
+            const { data } = await supabase.from('bidders').select('*').eq('name', myTeamName).single();
+            if (data) {
+                myCurrentBudget = data.budget;
+                myRosterArray = Array.isArray(data.team) ? data.team : (typeof data.team === 'string' ? JSON.parse(data.team) : []);
+                setText(elements.myBudgetVal, `$${myCurrentBudget}`);
+                evaluateButtonState();
+            }
+        }
+
+        function renderBidderView(data) {
+            activeFloorRecord = data || {};
+
+            setText(elements.floorPlayerName, data?.player || 'Waiting Room Open');
+            setText(elements.floorBidAmount, `$${data?.amount || 0}`);
+
+            // Dynamic formatting context based on who holds the current position
+            if (!data?.player || data?.status === 'SOLD') {
+                setText(elements.floorBidderName, 'Floor Closed');
+                elements.floorBidderName.style.color = '#fff';
+            } else if (data?.bidder === 'Base Price') {
+                setText(elements.floorBidderName, 'Opening Bid Available');
+                elements.floorBidderName.style.color = '#fff';
+            } else if (data?.bidder === myTeamName) {
+                // If it is held by the logged-in user, format text precisely
+                setText(elements.floorBidderName, 'Held by: YOU');
+                elements.floorBidderName.style.color = '#00ffcc';
+            } else {
+                // If held by another player, display their target name value
+                setText(elements.floorBidderName, `Held by: ${data?.bidder}`);
+                elements.floorBidderName.style.color = '#ff4d4d'; // Dynamic distinct alert color for competitors
+            }
+
+            setDisplay(elements.soldBanner, data?.status === 'SOLD' ? 'block' : 'none');
+
+            evaluateButtonState();
+        }
+
+        function evaluateButtonState() {
+            const btn = elements.mainBidBtn;
+
+            if (!isVerified) {
+                btn.innerText = 'ENTER PIN TO VERIFY';
+                btn.disabled = true;
+                setDisplay(elements.maxBidDisplay, 'none');
+                return;
+            }
+
+            if (!activeFloorRecord.player || activeFloorRecord.status === 'SOLD' || activeFloorRecord.time_left <= 0) {
+                btn.innerText = 'FLOOR CLOSED';
+                btn.disabled = true;
+                setDisplay(elements.maxBidDisplay, 'none');
+                return;
+            }
+
+            const maxAllowedBid = calculateMaxAllowedBid();
+            setText(elements.myMaxBidVal, `$${maxAllowedBid}`);
+            setDisplay(elements.maxBidDisplay, 'block');
+
+            if (activeFloorRecord.bidder === myTeamName) {
+                btn.innerText = 'YOUR BID HIGHEST';
+                btn.disabled = true;
+                return;
+            }
+
+            const nextBidRequired = getNextBidRequired();
+
+            if (bidMode === 'manual') {
+                const manualBid = getManualBidInputValue();
+
+                if (manualBid === null || manualBid <= 0) {
+                    btn.innerText = 'ENTER BID AMOUNT';
+                    btn.disabled = true;
+                    return;
+                }
+
+                const currentLiveBid = activeFloorRecord.amount || 0;
+                const minimumAllowedManualBid = Math.max(nextBidRequired, currentLiveBid + 250);
+
+                if (manualBid < minimumAllowedManualBid) {
+                    btn.innerText = `MIN BID $${minimumAllowedManualBid}`;
+                    btn.disabled = true;
+                    return;
+                }
+
+                if (manualBid > maxAllowedBid) {
+                    btn.innerText = 'ROSTER CAP EXCEEDED';
+                    btn.disabled = true;
+                    return;
+                }
+
+                if (myCurrentBudget < manualBid) {
+                    btn.innerText = 'OUT OF BUDGET';
+                    btn.disabled = true;
+                    return;
+                }
+
+                btn.innerText = `PLACE BID $${manualBid}`;
+                btn.disabled = false;
+                return;
+            }
+
+            if (nextBidRequired > maxAllowedBid) {
+                btn.innerText = 'ROSTER CAP EXCEEDED';
+                btn.disabled = true;
+                return;
+            }
+
+            if (myCurrentBudget < nextBidRequired) {
+                btn.innerText = 'OUT OF BUDGET';
+                btn.disabled = true;
+                return;
+            }
+
+            btn.innerText = `PLACE BID $${nextBidRequired}`;
+            btn.disabled = false;
+        }
+
+        window.submitLiveFloorBid = async function () {
+            if (!isVerified) return;
+
+            const btn = elements.mainBidBtn;
+            btn.disabled = true;
+
+            const nextBidRequired = getNextBidRequired();
+            const targetBid = bidMode === 'manual' ? getManualBidInputValue() : nextBidRequired;
+            const maxAllowedBid = calculateMaxAllowedBid();
+
+            const currentLiveBid = activeFloorRecord.amount || 0;
+            const minimumAllowedManualBid = Math.max(nextBidRequired, currentLiveBid + 250);
+
+            if (targetBid === null || targetBid <= 0) return;
+            if (targetBid < minimumAllowedManualBid) return;
+            if (targetBid > maxAllowedBid || myCurrentBudget < targetBid) return;
+
+            const { error } = await supabase
+                .from('current_auction')
+                .update({
+                    amount: targetBid,
+                    bidder: myTeamName,
+                    time_left: 15
+                })
+                .eq('id', 1);
+
+            if (error) {
+                console.error('Bid dropped:', error);
+                evaluateButtonState();
+            }
+        };
+
+        window.addEventListener('DOMContentLoaded', initBidderApp);
+    </script>
+</body>
+
+</html>

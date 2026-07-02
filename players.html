@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="logo.png" type="image/x-icon">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Player List Dashboard</title>
+    <style>
+        :root {
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --accent: #475569;
+            --border-radius: 8px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin: 0 0 20px 0;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        h2 {
+            text-align: center;
+            margin: 0 0 20px 0;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #2663f1;
+        }
+
+        .grade-section {
+            margin-bottom: 25px;
+        }
+
+        .grade-title {
+            font-size: 1.2rem;
+            border-bottom: 2px solid var(--accent);
+            padding-bottom: 4px;
+            margin-bottom: 12px;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Compact Grid Layout */
+        .player-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+            gap: 12px;
+        }
+
+        /* Sleek horizontal player rows */
+        .player-card {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            gap: 12px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .player-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: #cbd5e1;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1rem;
+            color: #fff;
+            flex-shrink: 0;
+            border: 1px solid #cbd5e1;
+        }
+
+        .player-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .player-details {
+            flex-grow: 1;
+            min-width: 0;
+            /* Prevents overflow text clipping issues */
+        }
+
+        .player-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+            gap: 4px;
+        }
+
+        .player-info h3 {
+            margin: 0;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #0f172a;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .specialty-badge {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        /* Horizontal Mini Stats Row */
+        .stats-row {
+            display: flex;
+            gap: 10px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .stat-item strong {
+            color: var(--text-main);
+        }
+
+        .card-meta-right {
+            text-align: right;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 4px;
+        }
+
+        .price {
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: #16a34a;
+        }
+
+        .status {
+            text-transform: uppercase;
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            padding: 1px 5px;
+            border-radius: 4px;
+        }
+
+        .status.unsold {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .status.sold {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .player-count-text {
+            text-align: center;
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            margin: 0 0 20px 0;
+            font-weight: 500;
+        }
+
+        .message {
+            text-align: center;
+            font-size: 1rem;
+            color: var(--text-muted);
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container" id="dashboard">
+        <h2>Milwaukee Street League</h2>
+        <h1>Tournament Roster 2026</h1>
+        <p class="player-count-text">Player Count: <span id="player-count">0</span></p>
+        <div id="status-msg" class="message">Loading player details...</div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://xudbfkvfuqaqzkqpgtsn.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1ZGJma3ZmdXFhcXprcXBndHNuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNTM3NjksImV4cCI6MjA5NzgyOTc2OX0.k_C3s_jdWStqd6BXSJEIv0uYzA04nk000v-7ChldGz0";
+
+        async function loadPlayerData() {
+            const statusMsg = document.getElementById('status-msg');
+            try {
+                const response = await fetch('player_details.json');
+                if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+                const data = await response.json();
+                const playerList = data.players || data;
+                await syncSoldPlayerData(playerList);
+                statusMsg.remove();
+                renderDashboard(playerList);
+                document.getElementById('player-count').textContent = playerList.length;
+            } catch (error) {
+                console.error("Failed to parse JSON file:", error);
+                statusMsg.textContent = "Error loading player configuration file.";
+                statusMsg.style.color = "#991b1b";
+            }
+        }
+
+        async function syncSoldPlayerData(playerList) {
+            try {
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/bidders?select=team`, {
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`
+                    }
+                });
+
+                if (!response.ok) throw new Error(`Supabase fetch failed: ${response.status}`);
+                const bidderRows = await response.json();
+
+                const soldPlayers = new Map();
+                (bidderRows || []).forEach(row => {
+                    (Array.isArray(row.team) ? row.team : []).forEach(item => {
+                        if (item?.player_name) {
+                            soldPlayers.set(item.player_name.trim(), item.bid_win_price ?? null);
+                        }
+                    });
+                });
+
+                playerList.forEach(player => {
+                    const soldPrice = soldPlayers.get(player.player?.trim());
+                    if (soldPrice !== undefined) {
+                        player.status = 'sold';
+                        player.sold_at_price = soldPrice;
+                    } else if (!player.status) {
+                        player.status = 'unsold';
+                    }
+                });
+            } catch (error) {
+                console.error('Failed to sync bidder data:', error);
+            }
+        }
+
+        function renderDashboard(playerList) {
+            const container = document.getElementById('dashboard');
+
+            // Group players by grade field
+            const groups = playerList.reduce((acc, player) => {
+                if (!acc[player.grade]) acc[player.grade] = [];
+                acc[player.grade].push(player);
+                return acc;
+            }, {});
+
+            // Sort players alphabetically within each grade section
+            Object.keys(groups).forEach(grade => {
+                groups[grade].sort((a, b) => a.player.localeCompare(b.player, undefined, { sensitivity: 'base' }));
+            });
+
+            // Sort roster sections sequentially by grade number
+            const sortedGrades = Object.keys(groups).sort((a, b) => a - b);
+
+            sortedGrades.forEach(grade => {
+                const section = document.createElement('div');
+                section.className = 'grade-section';
+
+                // Custom Title Rule: If grade is 6, replace with "New Players"
+                const sectionTitle = parseInt(grade) === 6 ? "New Players" : `Grade ${grade}`;
+
+                section.innerHTML = `
+                    <h2 class="grade-title">${sectionTitle}</h2>
+                    <div class="player-grid">
+                        ${groups[grade].map(player => {
+                    // Extract first word of the name, completely lowercased
+                    const firstNameClean = player.player.trim().split(' ')[0].toLowerCase();
+
+                    // Target filename layout: images/jamil.jpg
+                    const imagePath = `images/${firstNameClean}.jpg`;
+                    const priceValue = player.status === 'sold' && player.sold_at_price != null
+                        ? player.sold_at_price
+                        : player.base_price;
+                    const formattedPrice = typeof priceValue === 'number'
+                        ? priceValue.toLocaleString()
+                        : priceValue;
+
+                    return `
+                            <div class="player-card">
+                                <div class="player-avatar">
+                                    <img src="${imagePath}" 
+                                         alt="${player.player}" 
+                                         onerror="this.onerror=null; this.parentElement.innerHTML='${player.player.charAt(0)}';">
+                                </div>
+                                <div class="player-details">
+                                    <div class="player-meta">
+                                        <div class="player-info">
+                                            <h3>${player.player}</h3>
+                                            <span class="specialty-badge">${player.specialty}</span>
+                                        </div>
+                                    </div>
+                                    <div class="stats-row">
+                                        <div class="stat-item">Mat: <strong>${player.innings}</strong></div>
+                                        <div class="stat-item">Runs: <strong>${player.runs}</strong></div>
+                                        <div class="stat-item">Wkts: <strong>${player.wickets}</strong></div>
+                                    </div>
+                                </div>
+                                <div class="card-meta-right">
+                                    <span class="price">$${formattedPrice}</span>
+                                    <span class="status ${player.status}">${player.status}</span>
+                                </div>
+                            </div>
+                        `}).join('')}
+                    </div>
+                `;
+                container.appendChild(section);
+            });
+        }
+
+        loadPlayerData();
+    </script>
+</body>
+
+</html>

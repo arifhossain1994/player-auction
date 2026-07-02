@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="logo.png" type="image/x-icon">
+    <title>🎛️ MANAGER DASHBOARD 🎛️</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: #0f1219;
+            color: #fff;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1,
+        h2 {
+            color: #00f5ff;
+            letter-spacing: 1px;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 40% 58%;
+            gap: 2%;
+        }
+
+        .panel-box {
+            background: #141923;
+            border: 2px solid #222d42;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            margin-bottom: 20px;
+        }
+
+        button {
+            background: #00f5ff;
+            color: #000;
+            border: none;
+            padding: 12px 20px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        button:disabled {
+            background-color: #2c3e50 !important;
+            color: #7f8fa4 !important;
+            border: 1px solid #34495e;
+            cursor: not-allowed;
+        }
+
+        button.danger {
+            background: #ff3333;
+            color: white;
+        }
+
+        button.warning {
+            background: #ffb800;
+            color: black;
+        }
+
+        .player-list {
+            max-height: 500px;
+            overflow-y: auto;
+            background: #0b0c10;
+            border-radius: 6px;
+            padding: 5px;
+        }
+
+        .player-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #222d42;
+        }
+
+        .live-preview {
+            background: #1c2436;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 5px solid #39ff14;
+            margin-top: 15px;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 4px;
+            color: #a0aec0;
+            font-size: 0.9rem;
+        }
+
+        select,
+        input {
+            width: 100%;
+            background: #0b0c10;
+            border: 1px solid #222d42;
+            color: white;
+            padding: 10px;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>🎛️ TOURNAMENT COMMISSIONER DASHBOARD</h1>
+    <hr style="border-color:#222d42; margin-bottom:20px;">
+
+    <div class="dashboard">
+        <div>
+            <div class="panel-box">
+                <h2>1. DRAFT POOL REGISTRY</h2>
+                <p style="font-size:0.85rem; color:#7f8fa4; margin-top:-5px; margin-bottom:15px;">
+                    🔄 Sorted automatically by Grade Tier from <code>player_details.json</code>
+                </p>
+                <div id="playerPoolContainer" class="player-list">
+                    <p style="padding:10px; color:#7f8fa4;">Syncing with master file pool...</p>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <div class="panel-box">
+                <h2>2. LIVE MAIN STAGE CONTROLS</h2>
+
+                <div class="live-preview">
+                    <strong>On Stage Now:</strong> <span id="currentFloorPlayer"
+                        style="color:#ffb800; font-weight:bold;">None</span> |====>
+                    <strong>Current Bid:</strong> <span id="currentFloorPrice" style="color:#39ff14;">$0</span> by <span
+                        id="currentFloorBidder" style="color:#ff007f;">-</span>
+                </div>
+
+                <h3 style="margin-top:20px;">Manual Bid Override</h3>
+                <div style="display:flex; gap:10px; margin-bottom:15px;">
+                    <div style="flex:1;">
+                        <label for="manualTeamSelect">Select Bidding Team:</label>
+                        <select id="manualTeamSelect">
+                            <option value="">-- Choose Team --</option>
+                        </select>
+                    </div>
+                    <div style="flex:1;">
+                        <label for="manualBidValue">Bid Value ($):</label>
+                        <input type="number" id="manualBidValue" placeholder="Enter bid value...">
+                    </div>
+                </div>
+                <button onclick="submitManualBid()">🔨 Force Push Bid</button>
+
+                <hr style="border-color:#222d42; margin-top:20px; margin-bottom:20px;">
+
+                <h3>Clock & Hammer Controls</h3>
+                <button class="warning" onclick="adjustClock(15)">⏱️ Reset Clock to 15s</button>
+                <button class="warning" onclick="adjustClock(5)">⏱️ Cut to 5s</button>
+                <button class="danger" style="font-size:1.3rem; padding:15px 30px; width:98%;" onclick="hammerSold()">🔨
+                    MARK SOLD</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+        const SUPABASE_URL = "https://xudbfkvfuqaqzkqpgtsn.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1ZGJma3ZmdXFhcXprcXBndHNuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNTM3NjksImV4cCI6MjA5NzgyOTc2OX0.k_C3s_jdWStqd6BXSJEIv0uYzA04nk000v-7ChldGz0";
+        const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const elements = {
+            playerPoolContainer: document.getElementById('playerPoolContainer'),
+            currentFloorPlayer: document.getElementById('currentFloorPlayer'),
+            currentFloorPrice: document.getElementById('currentFloorPrice'),
+            currentFloorBidder: document.getElementById('currentFloorBidder'),
+            manualTeamSelect: document.getElementById('manualTeamSelect'),
+            manualBidValue: document.getElementById('manualBidValue')
+        };
+
+        let localPlayerPool = [];
+        let activeFloorRecord = {};
+
+        function setText(element, value) {
+            if (element) element.textContent = value;
+        }
+
+        async function initDashboardSync() {
+            const { data: initialFloor } = await supabase.from('current_auction').select('*').eq('id', 1).single();
+            if (initialFloor) cacheActiveFloor(initialFloor);
+
+            supabase
+                .channel('manager-floor-channel')
+                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'current_auction', filter: 'id=eq.1' }, payload => {
+                    if (payload?.new) cacheActiveFloor(payload.new);
+                })
+                .subscribe();
+
+            const { data: teams } = await supabase.from('bidders').select('name').order('name', { ascending: true });
+            if (teams) {
+                elements.manualTeamSelect.innerHTML = '<option value="">-- Choose Team --</option>' +
+                    teams.map(t => `<option value="${t.name}">${t.name}</option>`).join('');
+            }
+            await fetchMasterJsonData();
+        }
+
+        async function fetchMasterJsonData() {
+            try {
+                const response = await fetch('player_details.json');
+                if (!response.ok) throw new Error("File fetch routine missed targets.");
+
+                const data = await response.json();
+                localPlayerPool = (data.players || data).sort((a, b) => {
+                    if (a.grade !== b.grade) return a.grade - b.grade;
+                    return a.player.localeCompare(b.player, undefined, { sensitivity: 'base' });
+                });
+
+                await syncRosterStatesWithDb();
+                renderLocalPlayerPool();
+            } catch (err) {
+                console.error(err);
+                if (elements.playerPoolContainer) {
+                    elements.playerPoolContainer.innerHTML =
+                        `<p style="padding:10px; color:#ff3333;">❌ Error: Could not locate or parse 'player_details.json' directly in root directory.</p>`;
+                }
+            }
+        }
+
+        async function syncRosterStatesWithDb() {
+            const { data: allTeams, error } = await supabase.from('bidders').select('team');
+            if (error) {
+                console.error('Ledger Sync Error details:', error);
+                return;
+            }
+
+            const priceMap = {};
+            const draftedNames = new Set();
+
+            if (allTeams) {
+                allTeams.forEach(team => {
+                    (Array.isArray(team.team) ? team.team : []).forEach(item => {
+                        if (item?.player_name) {
+                            const name = item.player_name.trim();
+                            draftedNames.add(name);
+                            priceMap[name] = item.bid_win_price;
+                        }
+                    });
+                });
+            }
+
+            const livePlayerName = activeFloorRecord?.player || null;
+            const isStageActive = activeFloorRecord?.status === 'active';
+
+            localPlayerPool.forEach(player => {
+                if (draftedNames.has(player.player)) {
+                    player.status = 'sold';
+                    player.sold_at_price = priceMap[player.player] || '—';
+                } else if (isStageActive && player.player === livePlayerName) {
+                    player.status = 'active';
+                } else {
+                    player.status = 'unsold';
+                }
+            });
+        }
+
+        function cacheActiveFloor(data) {
+            activeFloorRecord = data || {};
+
+            setText(elements.currentFloorPlayer, data?.player || 'None');
+            setText(elements.currentFloorPrice, `$${data?.amount || 0}`);
+            setText(elements.currentFloorBidder, data?.bidder || '-');
+
+            if (localPlayerPool.length > 0) {
+                const livePlayerName = data?.player || '';
+                const isStageActive = data?.status === 'active';
+
+                localPlayerPool.forEach(player => {
+                    if (player.status === 'active' && (!isStageActive || player.player !== livePlayerName)) {
+                        player.status = 'unsold';
+                    } else if (isStageActive && player.player === livePlayerName && player.status !== 'sold') {
+                        player.status = 'active';
+                    }
+                });
+                renderLocalPlayerPool();
+            }
+        }
+
+        function renderLocalPlayerPool() {
+            if (!elements.playerPoolContainer) return;
+
+            elements.playerPoolContainer.innerHTML = localPlayerPool.map((player, idx) => {
+                const isSold = player.status === 'sold';
+                const isActive = player.status === 'active';
+                const isUnavailable = isSold || isActive;
+
+                return `
+                <div class="player-row" style="${isUnavailable ? 'opacity: 0.55;' : ''}">
+                    <div>
+                        <strong>${player.player}</strong> (G-${player.grade} | ${player.specialty})
+                        <div style="font-size:0.8rem; color:#7f8fa4; margin-top: 2px;">
+                            ${isSold ? `<span style="color:#39ff14; font-weight:bold;">Sold for: $${player.sold_at_price || '—'}</span>` : ''}
+                            ${isActive ? `<span style="color:#ffb800; font-weight:bold;">⚡ LIVE ON STAGE</span>` : ''}
+                            ${(!isSold && !isActive) ? `Base: $${player.base_price}` : ''}
+                        </div>
+                    </div>
+                    <div>
+                        ${isUnavailable
+                        ? `<button disabled style="padding: 5px 10px;">${isSold ? 'DRAFTED' : 'ON STAGE'}</button>`
+                        : `<button onclick="globalSendToStage(${idx})" style="padding: 5px 10px;">Deploy</button>`}
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        window.globalSendToStage = async function (index) {
+            const player = localPlayerPool[index];
+            if (!player || player.status === 'sold' || player.status === 'active') return;
+
+            if (activeFloorRecord?.player && activeFloorRecord?.status === 'active') {
+                if (!confirm(`⚠️ ${activeFloorRecord.player} is currently active on stage. Override and pull them?`)) return;
+            }
+
+            const firstWord = player.player.trim().split(' ')[0].toLowerCase();
+            const { error } = await supabase
+                .from('current_auction')
+                .update({
+                    player: player.player,
+                    grade: player.grade,
+                    specialty: player.specialty,
+                    innings: player.innings || 0,
+                    runs: player.runs || 0,
+                    wickets: player.wickets || 0,
+                    base_price: player.base_price,
+                    photo: `./images/${firstWord}.jpg`,
+                    amount: player.base_price,
+                    bidder: 'Base Price',
+                    status: 'active',
+                    time_left: 15
+                })
+                .eq('id', 1);
+
+            if (error) {
+                alert('❌ SUPABASE ERROR:\n' + JSON.stringify(error, null, 2));
+            } else {
+                player.status = 'active';
+                renderLocalPlayerPool();
+            }
+        };
+
+        window.submitManualBid = async function () {
+            const team = elements.manualTeamSelect.value;
+            const amt = parseInt(elements.manualBidValue.value, 10);
+
+            if (!team || !amt) {
+                alert('Please declare both target team name and entry amount numbers!');
+                return;
+            }
+
+            if (amt <= (activeFloorRecord?.amount || 0)) {
+                alert('Override error: Entry amount must breach current highest floor bid!');
+                return;
+            }
+
+            await supabase.from('current_auction').update({
+                amount: amt,
+                bidder: team,
+                time_left: 15
+            }).eq('id', 1);
+
+            elements.manualBidValue.value = '';
+        };
+
+        window.adjustClock = async function (seconds) {
+            await supabase.from('current_auction').update({ time_left: seconds }).eq('id', 1);
+        };
+
+        window.hammerSold = async function () {
+            if (!activeFloorRecord?.player || activeFloorRecord?.status === 'SOLD') {
+                alert('No ongoing live process can be completed at this time!');
+                return;
+            }
+
+            const buyer = activeFloorRecord.bidder;
+            const cost = activeFloorRecord.amount;
+            const draftedPlayerName = activeFloorRecord.player;
+
+            if (buyer === 'Base Price' || !buyer || buyer === '-') {
+                alert(`🚨 CANNOT MARK SOLD: No team has placed a bid on ${draftedPlayerName} yet!`);
+                return;
+            }
+
+            const { data: teamProfile } = await supabase.from('bidders').select('*').eq('name', buyer).single();
+            if (!teamProfile) {
+                alert('Error finding matching buying team profiles!');
+                return;
+            }
+
+            const newBudget = teamProfile.budget - cost;
+            if (newBudget < 0) {
+                alert(`Transaction Rejected: ${buyer} has insufficient funds ($${teamProfile.budget} left)!`);
+                return;
+            }
+
+            const currentTeamArray = Array.isArray(teamProfile.team) ? teamProfile.team : [];
+            const updatedTeamArray = [...currentTeamArray, { player_name: draftedPlayerName, bid_win_price: cost }];
+
+            const { error: bidderUpdateErr } = await supabase
+                .from('bidders')
+                .update({ budget: newBudget, team: updatedTeamArray })
+                .eq('name', buyer);
+
+            if (bidderUpdateErr) {
+                alert('Failed to update roster asset indices: ' + bidderUpdateErr.message);
+                return;
+            }
+
+            await supabase.from('current_auction').update({ status: 'SOLD' }).eq('id', 1);
+            updateLocalPoolStatus(draftedPlayerName, 'sold', cost);
+
+            try {
+                const jsonString = JSON.stringify({
+                    player: draftedPlayerName,
+                    winning_bid: cost,
+                    buying_team: buyer,
+                    timestamp: new Date().toISOString()
+                }, null, 4);
+
+                const blob = new Blob([jsonString], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const downloadAnchor = document.createElement('a');
+                downloadAnchor.href = url;
+                downloadAnchor.download = `SOLD_${draftedPlayerName.toLowerCase().replace(/\s+/g, '_')}.json`;
+                document.body.appendChild(downloadAnchor);
+                downloadAnchor.click();
+                document.body.removeChild(downloadAnchor);
+                URL.revokeObjectURL(url);
+            } catch (exportError) {
+                console.error('Local JSON compilation exception:', exportError);
+            }
+
+            alert(`SUCCESS: ${draftedPlayerName} added to ${buyer}'s roster for $${cost}!`);
+        };
+
+        function updateLocalPoolStatus(name, statusValue, price) {
+            const idx = localPlayerPool.findIndex(player => player.player === name);
+            if (idx !== -1) {
+                localPlayerPool[idx].status = statusValue;
+                if (price) localPlayerPool[idx].sold_at_price = price;
+                renderLocalPlayerPool();
+            }
+        }
+
+        initDashboardSync();
+    </script>
+</body>
+
+</html>
