@@ -387,7 +387,16 @@
             await supabase.from('current_auction').update({ time_left: seconds }).eq('id', 1);
         };
 
+        function playHammerSound() {
+            const hammerSound = new Audio('gravel.mp3');
+            hammerSound.play().catch(() => {
+                console.warn('Could not autoplay hammer sound.');
+            });
+        }
+
         window.hammerSold = async function () {
+            playHammerSound();
+
             if (!activeFloorRecord?.player || activeFloorRecord?.status === 'SOLD') {
                 alert('No ongoing live process can be completed at this time!');
                 return;
@@ -429,27 +438,6 @@
 
             await supabase.from('current_auction').update({ status: 'SOLD' }).eq('id', 1);
             updateLocalPoolStatus(draftedPlayerName, 'sold', cost);
-
-            try {
-                const jsonString = JSON.stringify({
-                    player: draftedPlayerName,
-                    winning_bid: cost,
-                    buying_team: buyer,
-                    timestamp: new Date().toISOString()
-                }, null, 4);
-
-                const blob = new Blob([jsonString], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const downloadAnchor = document.createElement('a');
-                downloadAnchor.href = url;
-                downloadAnchor.download = `SOLD_${draftedPlayerName.toLowerCase().replace(/\s+/g, '_')}.json`;
-                document.body.appendChild(downloadAnchor);
-                downloadAnchor.click();
-                document.body.removeChild(downloadAnchor);
-                URL.revokeObjectURL(url);
-            } catch (exportError) {
-                console.error('Local JSON compilation exception:', exportError);
-            }
 
             alert(`SUCCESS: ${draftedPlayerName} added to ${buyer}'s roster for $${cost}!`);
         };
